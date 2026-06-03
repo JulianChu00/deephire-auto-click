@@ -7,7 +7,7 @@
 ### 方式一：Greasy Fork 脚本（推荐）
 
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 或 [Violentmonkey](https://violentmonkey.github.io/)
-2. [点击安装脚本](https://greasyfork.org/zh-CN/scripts/your-script-id) 或直接打开 `deephire-auto-click.user.js` 拖入浏览器
+2. [点击安装脚本](https://greasyfork.org/en/scripts/580920-deephireautodelivery) 或直接打开 `deephire-auto-click.user.js` 拖入浏览器
 3. 打开推荐页面即生效
 
 ### 方式二：Chrome 扩展

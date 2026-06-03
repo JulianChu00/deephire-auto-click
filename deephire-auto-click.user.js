@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DeepHire 自动投递
-// @namespace    https://greasyfork.org/zh-CN/scripts/your-script-id
+// @namespace    https://github.com/JulianChu00/deephire-auto-click
 // @version      1.0
 // @description  在 DeepHire 推荐页面自动点击「投递简历」按钮，支持进度显示、每日上限检测、面板拖拽折叠
 // @author       Chu Julian (C.Julian)
