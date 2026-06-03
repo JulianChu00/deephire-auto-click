@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "DeepHire 自动点击",
+  "version": "1.0",
+  "description": "在 DeepHire 推荐页面上自动点击「投递简历」按钮",
+  "permissions": [],
+  "host_permissions": [
+    "https://www.deephire.cn/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.deephire.cn/jobseeker/recommend*"
+      ],
+      "js": ["src/interceptor/interceptor.ts"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.deephire.cn/jobseeker/recommend*"
+      ],
+      "js": ["src/content/main.tsx"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
