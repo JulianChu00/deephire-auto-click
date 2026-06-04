@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepHire 自动投递
 // @namespace    https://github.com/JulianChu00/deephire-auto-click
-// @version      1.0
-// @description  在 DeepHire 推荐页面自动点击「投递简历」按钮，支持进度显示、每日上限检测、面板拖拽折叠
+// @version      1.1
+// @description  在 DeepHire 推荐页面自动点击「投递简历」按钮，支持进度显示、每日上限检测、面板拖拽折叠，后台标签页不睡眠
 // @author       Chu Julian (C.Julian)
 // @license      MIT
 // @match        https://www.deephire.cn/jobseeker/recommend*
@@ -18,6 +18,7 @@
  * 【功能介绍】
  * 在 DeepHire 推荐页面（/jobseeker/recommend）自动批量投递简历，
  * 无需手动逐个点击，脚本会自动滚动列表、点击按钮、检测每日上限。
+ * 运行时自动保持标签页活跃，切到其他窗口也不会暂停。
  *
  * 【主要特性】
  * • 浮动面板 — 右下角实时显示投递进度和百分比进度条
@@ -25,6 +26,7 @@
  * • 每日上限检测 — 拦截 sendResume 接口响应，上限达成立刻停止并提示
  * • 拖拽移动 — 按住标题栏可拖动面板到任意位置
  * • 折叠收起 — 点击 − 按钮收起面板，不遮挡页面内容
+ * • 后台保活 — 切到其他窗口/标签页不会暂停（v1.1 新增）
  *
  * 【使用步骤】
  * 1. 安装 Tampermonkey / Violentmonkey 扩展
@@ -44,6 +46,7 @@
  * • 依赖页面的 .btn.btn-submit 按钮选择器，网站改版可能导致失效
  * • 每日上限信息来自 sendResume 接口返回的 statusMessage 字段
  * • 不会重复点击已投递的按钮（通过 dataset.autoClicked 标记）
+ * • 后台保活使用静默音频，不会发出声音，停止投递后自动释放
  *
  * 【已知问题】
  * • 如网站更新 DOM 结构导致按钮选择器变化，需修改对应的 CSS 选择器
@@ -69,6 +72,41 @@
     stopRequested: false,
     limitReached: false,
   };
+
+  // ========== 后台保活：静默音频阻止 Chrome 节流 ==========
+  let audioCtx = null;
+  let audioTimer = null;
+
+  function keepAwake() {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.001; // 近乎无声，但保持音频上下文活跃
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 20;
+      osc.start();
+      // 每 10 秒重新触发一下，防止某些浏览器回收
+      audioTimer = setInterval(() => {
+        if (audioCtx && audioCtx.state !== 'running') {
+          audioCtx.resume();
+        }
+      }, 10000);
+      console.log('[自动投递] 后台保活已开启');
+    } catch (e) {
+      console.warn('[自动投递] 无法开启后台保活:', e);
+    }
+  }
+
+  function releaseWake() {
+    if (audioTimer) { clearInterval(audioTimer); audioTimer = null; }
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+      console.log('[自动投递] 后台保活已释放');
+    }
+  }
 
   // ========== 网络拦截（页面主环境，直接生效） ==========
   function installInterceptor() {
@@ -203,10 +241,13 @@
     if (state.collapsed) { state.collapsed = false; }
     updateUI();
 
+    keepAwake();
+
     const container = document.querySelectorAll('.overflow-y-auto')[1];
     if (!container) {
       state.status = 'idle';
       state.running = false;
+      releaseWake();
       updateUI();
       return;
     }
@@ -238,6 +279,8 @@
       container.scrollTop = container.scrollHeight;
       await sleep(SCROLL_MS);
     }
+
+    releaseWake();
 
     if (state.limitReached) {
       state.status = 'limit';
